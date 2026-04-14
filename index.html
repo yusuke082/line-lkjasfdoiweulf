@@ -347,6 +347,44 @@
          margin-bottom: 10px;
       }
 
+      /* ロック画面（認証用） */
+      #lock-screen {
+         position: fixed;
+         top: 0; left: 0; width: 100%; height: 100%;
+         background: var(--bg-color);
+         z-index: 2000;
+         display: none;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         padding: 20px;
+         text-align: center;
+      }
+
+      .lock-card {
+         background: white;
+         padding: 30px;
+         border-radius: 20px;
+         box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+         width: 100%;
+         max-width: 320px;
+      }
+
+      .lock-icon { font-size: 40px; margin-bottom: 15px; }
+      .lock-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; }
+      .lock-desc { font-size: 14px; color: var(--text-light); margin-bottom: 20px; }
+
+      #passcode-input {
+         width: 100%;
+         padding: 15px;
+         font-size: 20px;
+         text-align: center;
+         border: 2px solid var(--border);
+         border-radius: 12px;
+         margin-bottom: 15px;
+         letter-spacing: 0.5em;
+      }
+
       @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
    </style>
 </head>
@@ -363,6 +401,17 @@
    </div>
 
    <main class="main-content" id="tables-container"></main>
+
+   <!-- ロック画面 -->
+   <div id="lock-screen">
+      <div class="lock-card">
+         <div class="lock-icon">🔒</div>
+         <div class="lock-title">セキュリティ認証</div>
+         <p class="lock-desc">初回のみ「合言葉」が必要です。<br>関係者以外はアクセスできません。</p>
+         <input type="number" id="passcode-input" placeholder="0000" inputmode="numeric">
+         <button class="btn-line" onclick="submitPasscode()">認証する</button>
+      </div>
+   </div>
 
    <!-- Modal -->
    <div id="edit-modal" class="modal-overlay">
@@ -384,19 +433,21 @@
 
       let currentTargetCell = null;
       let appData = null;
+      let userId = null;
 
       // --- Initialization ---
       window.onload = async () => {
          try {
             await liff.init({ liffId: LIFF_ID });
-            if (!liff.isLoggedIn()) {
-               // 外部ブラウザの場合はログインを促してもよいが、今回はLIFF想定
-               // liff.login(); 
-            }
+            
+            // プロフィール（ID）取得
+            const profile = await liff.getProfile();
+            userId = profile.userId;
+
             await fetchData();
          } catch (err) {
             console.error("Initialization failed", err);
-            alert("エラーが発生しました: " + err.message);
+            // alert("エラーが発生しました: " + err.message);
          } finally {
             document.getElementById('loader').style.display = 'none';
          }
@@ -408,13 +459,21 @@
             window[callbackName] = function(data) {
                delete window[callbackName];
                document.body.removeChild(script);
+
+               if (data.authRequired) {
+                  document.getElementById('lock-screen').style.display = 'flex';
+                  resolve(null);
+                  return;
+               }
+
+               document.getElementById('lock-screen').style.display = 'none';
                appData = data;
                render(data);
                resolve(data);
             };
 
             const script = document.createElement('script');
-            script.src = `${GAS_URL}?action=getData&callback=${callbackName}`;
+            script.src = `${GAS_URL}?action=getData&userId=${userId}&callback=${callbackName}`;
             script.onerror = () => {
                document.body.removeChild(script);
                reject(new Error("Script load error"));
@@ -423,21 +482,43 @@
          });
       }
 
-      async function sendUpdate(row, col, value) {
+      async function submitPasscode() {
+         const pass = document.getElementById('passcode-input').value;
+         if (!pass) return;
+
          try {
-            // mode: 'no-cors' はレスポンスの中身が見られないが、送信自体は成功する
-            // もしレスポンスの中身（最新の集計結果など）が必要な場合は工夫が必要だが、
-            // 今回はシンプルさを優先し、送信後に再取得するか、レスポンスが見える前提で記述
+            document.getElementById('loader').style.display = 'flex';
             const resp = await fetch(GAS_URL, {
                method: 'POST',
-               mode: 'cors', // シンプルリクエストならcorsで行ける場合がある
                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-               body: JSON.stringify({ action: 'updateCell', row, col, value })
+               body: JSON.stringify({ action: 'bindUser', userId: userId, passcode: pass })
+            });
+            const result = await resp.json();
+            
+            if (result.success) {
+               alert(result.message);
+               await fetchData(); // 再取得してロック解除
+            } else {
+               alert(result.message);
+            }
+         } catch (err) {
+            alert("通信エラーが発生しました。");
+         } finally {
+            document.getElementById('loader').style.display = 'none';
+         }
+      }
+
+      async function sendUpdate(row, col, value) {
+         try {
+            const resp = await fetch(GAS_URL, {
+               method: 'POST',
+               mode: 'cors',
+               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+               body: JSON.stringify({ action: 'updateCell', userId: userId, row, col, value })
             });
             return await resp.json();
          } catch (err) {
             console.error(err);
-            // エラーでも実際にはスプレッドシートが更新されていることがある
             return { success: false, message: "通信エラー" };
          }
       }
