@@ -863,10 +863,10 @@
             const textMsg = formatText(data, groupName);
 
             if (liff.isInClient()) {
-               // Flex Message と テキスト を配列で同時に送る
                await liff.sendMessages([
-                  { type: 'flex', altText: `${groupName}の花びら報告`, contents: flexMsg },
-                  { type: 'text', text: textMsg }
+                  { type: 'flex', altText: `${groupName}のチラシ報告`, contents: flexMsg },
+                  { type: 'text', text: textMsg },
+                  { type: 'text', text: `https://liff.line.me/${LIFF_ID}` }
                ]);
                showStatus(statusBox, "報告を送信しました！", true);
                liff.closeWindow();
