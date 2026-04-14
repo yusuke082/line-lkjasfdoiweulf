@@ -508,7 +508,8 @@
 
       /* 楽観的更新中のスタイル */
       .optimistic-updating {
-         color: #f59e0b !important; /* オレンジ色 */
+         color: #f59e0b !important;
+         /* オレンジ色 */
          font-style: italic;
          animation: pulseText 0.8s infinite alternate;
       }
@@ -570,7 +571,7 @@
    <!-- LIFF & Logic -->
    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
    <script>
-      const GAS_URL = "https://script.google.com/macros/s/AKfycbzBwco8jc_0SBkXtX5rChFx2lRlYxafyqU1nqzmtguBmfEO4MhSJimAqjNNtwgfDZI7/exec";
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbylNHb1kIf0FdOasNDCJkv3hO__eb_3I8mguiLhivdSKqMZOefLJ9seRC4en0ZFoaRS/exec";
       const LIFF_ID = "2009783223-QYwy8XNC";
 
       let currentTargetCell = null;
@@ -818,7 +819,7 @@
          closeModal();
 
          const result = await saveSpecific(row, col, newVal);
-         
+
          // 更新中スタイルを解除
          currentTargetCell.classList.remove("optimistic-updating");
          readonlyCells.forEach(cell => cell.classList.remove("optimistic-updating"));
