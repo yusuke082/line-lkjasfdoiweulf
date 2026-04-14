@@ -7,7 +7,7 @@
    <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
       rel="stylesheet">
-   <title>実績データ入力連携 (LIFF版)</title>
+   <title>チラシまき報告アプリ(LIFF版)</title>
    <style>
       :root {
          --primary: #00B900;
@@ -505,6 +505,30 @@
          right: 4px;
          font-size: 10px;
       }
+
+      /* 楽観的更新中のスタイル */
+      .optimistic-updating {
+         color: #f59e0b !important; /* オレンジ色 */
+         font-style: italic;
+         animation: pulseText 0.8s infinite alternate;
+      }
+
+      /* 確定時のフラッシュアニメーション */
+      .confirmed-flash {
+         animation: flashGreen 0.8s ease-out;
+      }
+
+      @keyframes flashGreen {
+         0% {
+            background-color: #dcfce7;
+            color: var(--primary);
+            font-weight: bold;
+         }
+
+         100% {
+            background-color: transparent;
+         }
+      }
    </style>
 </head>
 
@@ -767,34 +791,64 @@
       }
 
       async function confirmModal() {
-         const val = document.getElementById("modal-input").value || "0";
+         const newVal = document.getElementById("modal-input").value || "0";
          const row = currentTargetCell.dataset.row;
          const col = currentTargetCell.dataset.col;
 
-         // Optimistic UI
-         const oldContent = currentTargetCell.textContent;
-         currentTargetCell.textContent = val;
+         // Optimistic UI: 即座に自身の値を更新
+         const oldValStr = currentTargetCell.textContent.trim();
+         const oldNum = parseInt(oldValStr) || 0;
+         const newNum = parseInt(newVal) || 0;
+         const diff = newNum - oldNum;
+
+         currentTargetCell.textContent = newVal;
          currentTargetCell.classList.add("optimistic-updating");
+
+         // 同じ行の readonly-cell (集計セル) を即座に更新
+         const tr = currentTargetCell.parentElement;
+         const readonlyCells = tr.querySelectorAll('.readonly-cell');
+         if (readonlyCells.length >= 2 && diff !== 0) {
+            readonlyCells.forEach(cell => {
+               const currentSum = parseInt(cell.textContent) || 0;
+               cell.textContent = currentSum + diff;
+               cell.classList.add("optimistic-updating");
+            });
+         }
+
          closeModal();
 
-         const result = await saveSpecific(row, col, val);
+         const result = await saveSpecific(row, col, newVal);
+         
+         // 更新中スタイルを解除
          currentTargetCell.classList.remove("optimistic-updating");
+         readonlyCells.forEach(cell => cell.classList.remove("optimistic-updating"));
 
          if (result.success) {
+            // 成功フラッシュ
             currentTargetCell.classList.add("confirmed-flash");
-            setTimeout(() => currentTargetCell.classList.remove("confirmed-flash"), 1000);
+            readonlyCells.forEach(cell => {
+               cell.classList.remove("confirmed-flash");
+               void cell.offsetWidth; // アニメーションのリセット
+               cell.classList.add("confirmed-flash");
+            });
+            setTimeout(() => {
+               currentTargetCell.classList.remove("confirmed-flash");
+               readonlyCells.forEach(cell => cell.classList.remove("confirmed-flash"));
+            }, 1000);
 
             const wrapper = currentTargetCell.closest('.class-table-wrapper');
             if (wrapper) checkVenueRequirement(wrapper);
 
+            // 最終的な値をサーバーから取得した値で同期（同期ミス防止）
             if (result.newReadonlyValues) {
-               const tr = currentTargetCell.parentElement;
-               tr.children[1].textContent = result.newReadonlyValues[0];
-               tr.children[2].textContent = result.newReadonlyValues[1];
+               readonlyCells[0].textContent = result.newReadonlyValues[0];
+               readonlyCells[1].textContent = result.newReadonlyValues[1];
             }
          } else {
-            currentTargetCell.textContent = oldContent;
-            alert("保存に失敗しました。");
+            // 失敗した場合は元の値に戻す
+            currentTargetCell.textContent = oldValStr;
+            fetchData(); // 画面全体を再読み込みして整合性を担保
+            alert("保存に失敗しました。データを再読み込みします。");
          }
       }
 
