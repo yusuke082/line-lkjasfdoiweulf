@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap"
+      rel="stylesheet">
+   <title>実績データ入力連携 (LIFF版)</title>
+   <style>
+      :root {
+         --primary: #00B900;
+         --primary-hover: #009900;
+         --bg-color: #f4f7f6;
+         --surface: #ffffff;
+         --text: #2c3e50;
+         --text-light: #7f8c8d;
+         --border: #e0e6ed;
+         --radius: 12px;
+         --shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+         --nav-height: 50px;
+      }
+
+      * {
+         box-sizing: border-box;
+         margin: 0;
+         padding: 0;
+      }
+
+      body {
+         font-family: 'Inter', 'Noto Sans JP', sans-serif;
+         background-color: var(--bg-color);
+         color: var(--text);
+         min-height: 100vh;
+         padding-bottom: 40px;
+      }
+
+      /* Sticky Header */
+      #sticky-header-container {
+         position: sticky;
+         top: 0;
+         z-index: 20;
+         background-color: var(--surface);
+         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+         padding: 10px 10px;
+         text-align: center;
+      }
+
+      h1 {
+         font-size: 18px;
+         margin-bottom: 6px;
+         font-weight: 700;
+         color: var(--text);
+      }
+
+      #nav-container {
+         display: flex;
+         gap: 8px;
+         overflow-x: auto;
+         white-space: nowrap;
+         padding-bottom: 4px;
+         -webkit-overflow-scrolling: touch;
+      }
+
+      #nav-container::-webkit-scrollbar {
+         display: none;
+      }
+
+      #nav-container button {
+         padding: 6px 14px;
+         cursor: pointer;
+         border: 1px solid var(--border);
+         border-radius: 20px;
+         background-color: #f8fafc;
+         font-size: 13px;
+         font-weight: 600;
+         color: var(--text-light);
+         transition: all 0.2s;
+      }
+
+      #nav-container button.active-nav {
+         background-color: var(--primary);
+         color: white;
+         border-color: var(--primary);
+      }
+
+      .main-content {
+         padding: 20px 10px;
+         display: flex;
+         flex-direction: column;
+         align-items: center;
+      }
+
+      .class-table-wrapper {
+         background: var(--surface);
+         max-width: 500px;
+         width: 100%;
+         border-radius: var(--radius);
+         box-shadow: var(--shadow);
+         padding: 20px;
+         margin-bottom: 24px;
+         animation: fadeIn 0.4s ease-out;
+         scroll-margin-top: calc(var(--nav-height) + 20px);
+      }
+
+      @keyframes fadeIn {
+         from {
+            opacity: 0;
+            transform: translateY(10px);
+         }
+         to {
+            opacity: 1;
+            transform: translateY(0);
+         }
+      }
+
+      .section-title {
+         font-size: 18px;
+         font-weight: 700;
+         color: var(--primary);
+         margin-bottom: 12px;
+         border-bottom: 2px solid #e0f2e9;
+         padding-bottom: 8px;
+      }
+
+      .table-container {
+         overflow-x: auto;
+         border-radius: 8px;
+         border: 1px solid var(--border);
+         margin-bottom: 16px;
+      }
+
+      table {
+         width: 100%;
+         border-collapse: collapse;
+      }
+
+      th, td {
+         padding: 12px 8px;
+         border-bottom: 1px solid var(--border);
+         text-align: center;
+      }
+
+      th {
+         background-color: #f8fafc;
+         color: var(--text-light);
+         font-size: 12px;
+         font-weight: 600;
+      }
+
+      td {
+         font-size: 15px;
+      }
+
+      .readonly-cell {
+         color: var(--text-light);
+         background-color: #fafbfc;
+      }
+
+      .clickable-cell {
+         cursor: pointer;
+         color: #007aff;
+         font-weight: 600;
+         background-color: #f0fdf4;
+         transition: background-color 0.2s;
+      }
+
+      .clickable-cell:active {
+         background-color: #dcfce7;
+      }
+
+      /* Inputs */
+      .free-input-container {
+         margin-bottom: 20px;
+      }
+
+      .free-input-container label {
+         font-weight: 600;
+         display: block;
+         margin-bottom: 8px;
+         font-size: 13px;
+      }
+
+      textarea {
+         width: 100%;
+         padding: 12px;
+         border: 1px solid var(--border);
+         border-radius: 8px;
+         font-size: 14px;
+         resize: vertical;
+         min-height: 60px;
+         background-color: #fafbfc;
+      }
+
+      textarea:focus {
+         outline: none;
+         border-color: var(--primary);
+         box-shadow: 0 0 0 3px rgba(0, 185, 0, 0.1);
+      }
+
+      .action-row {
+         display: flex;
+         flex-direction: column;
+         gap: 10px;
+         border-top: 1px dashed var(--border);
+         padding-top: 16px;
+      }
+
+      .btn-line {
+         width: 100%;
+         background-color: #06C755;
+         color: white;
+         border: none;
+         padding: 16px;
+         font-size: 15px;
+         font-weight: bold;
+         border-radius: 10px;
+         cursor: pointer;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 8px;
+         transition: all 0.2s;
+         box-shadow: 0 4px 12px rgba(6, 199, 85, 0.2);
+      }
+
+      .btn-line:active {
+         transform: scale(0.98);
+         box-shadow: 0 2px 6px rgba(6, 199, 85, 0.2);
+      }
+
+      /* Status */
+      .status-box {
+         padding: 12px;
+         border-radius: 8px;
+         font-size: 14px;
+         text-align: center;
+         margin-bottom: 10px;
+         display: none;
+      }
+
+      .status-box.show {
+         display: block;
+         animation: slideDown 0.3s ease-out;
+      }
+
+      @keyframes slideDown {
+         from { opacity: 0; transform: translateY(-10px); }
+         to { opacity: 1; transform: translateY(0); }
+      }
+
+      .status-success { background-color: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+      .status-error { background-color: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+
+      /* Modals */
+      .modal-overlay {
+         display: none;
+         position: fixed;
+         top: 0; left: 0; width: 100%; height: 100%;
+         background: rgba(0,0,0,0.5);
+         z-index: 100;
+         backdrop-filter: blur(4px);
+         justify-content: center;
+         align-items: center;
+      }
+
+      .modal-content {
+         background: white;
+         padding: 24px;
+         border-radius: 16px;
+         width: 90%;
+         max-width: 340px;
+         text-align: center;
+      }
+
+      .modal-input {
+         width: 100%;
+         padding: 16px;
+         font-size: 24px;
+         text-align: center;
+         border: 2px solid var(--border);
+         border-radius: 12px;
+         margin: 20px 0;
+      }
+
+      .modal-btns {
+         display: flex;
+         gap: 12px;
+      }
+
+      .modal-btn {
+         flex: 1;
+         padding: 14px;
+         border-radius: 10px;
+         font-weight: bold;
+         cursor: pointer;
+         border: none;
+      }
+
+      .btn-confirm { background-color: var(--primary); color: white; }
+      .btn-cancel { background-color: #f1f5f9; color: var(--text); }
+
+      /* Loading Loader */
+      .global-loader {
+         position: fixed;
+         top: 0; left: 0; width: 100%; height: 100%;
+         background: rgba(255,255,255,0.8);
+         z-index: 1000;
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         font-weight: bold;
+      }
+
+      .spinner {
+         width: 40px;
+         height: 40px;
+         border: 4px solid #f3f3f3;
+         border-top: 4px solid var(--primary);
+         border-radius: 50%;
+         animation: spin 1s linear infinite;
+         margin-bottom: 10px;
+      }
+
+      @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+   </style>
+</head>
+
+<body>
+   <div id="loader" class="global-loader">
+      <div class="spinner"></div>
+      <div>データを読み込み中...</div>
+   </div>
+
+   <div id="sticky-header-container">
+      <h1>実績データ入力連携</h1>
+      <div id="nav-container"></div>
+   </div>
+
+   <main class="main-content" id="tables-container"></main>
+
+   <!-- Modal -->
+   <div id="edit-modal" class="modal-overlay">
+      <div class="modal-content">
+         <h3 id="modal-title">数値を編集</h3>
+         <input type="number" id="modal-input" class="modal-input" inputmode="numeric">
+         <div class="modal-btns">
+            <button class="modal-btn btn-cancel" onclick="closeModal()">戻る</button>
+            <button class="modal-btn btn-confirm" onclick="confirmModal()">確定</button>
+         </div>
+      </div>
+   </div>
+
+   <!-- LIFF & Logic -->
+   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+   <script>
+      const GAS_URL = "https://script.google.com/macros/s/AKfycbzBwco8jc_0SBkXtX5rChFx2lRlYxafyqU1nqzmtguBmfEO4MhSJimAqjNNtwgfDZI7/exec";
+      const LIFF_ID = "2009783223-QYwy8XNC";
+
+      let currentTargetCell = null;
+      let appData = null;
+
+      // --- Initialization ---
+      window.onload = async () => {
+         try {
+            await liff.init({ liffId: LIFF_ID });
+            if (!liff.isLoggedIn()) {
+               // 外部ブラウザの場合はログインを促してもよいが、今回はLIFF想定
+               // liff.login(); 
+            }
+            await fetchData();
+         } catch (err) {
+            console.error("Initialization failed", err);
+            alert("エラーが発生しました: " + err.message);
+         } finally {
+            document.getElementById('loader').style.display = 'none';
+         }
+      };
+
+      async function fetchData() {
+         return new Promise((resolve, reject) => {
+            const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+            window[callbackName] = function(data) {
+               delete window[callbackName];
+               document.body.removeChild(script);
+               appData = data;
+               render(data);
+               resolve(data);
+            };
+
+            const script = document.createElement('script');
+            script.src = `${GAS_URL}?action=getData&callback=${callbackName}`;
+            script.onerror = () => {
+               document.body.removeChild(script);
+               reject(new Error("Script load error"));
+            };
+            document.body.appendChild(script);
+         });
+      }
+
+      async function sendUpdate(row, col, value) {
+         try {
+            // mode: 'no-cors' はレスポンスの中身が見られないが、送信自体は成功する
+            // もしレスポンスの中身（最新の集計結果など）が必要な場合は工夫が必要だが、
+            // 今回はシンプルさを優先し、送信後に再取得するか、レスポンスが見える前提で記述
+            const resp = await fetch(GAS_URL, {
+               method: 'POST',
+               mode: 'cors', // シンプルリクエストならcorsで行ける場合がある
+               headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+               body: JSON.stringify({ action: 'updateCell', row, col, value })
+            });
+            return await resp.json();
+         } catch (err) {
+            console.error(err);
+            // エラーでも実際にはスプレッドシートが更新されていることがある
+            return { success: false, message: "通信エラー" };
+         }
+      }
+
+      // --- Render ---
+      function render(data) {
+         const container = document.getElementById("tables-container");
+         const nav = document.getElementById("nav-container");
+         container.innerHTML = "";
+         nav.innerHTML = "";
+
+         const sectionIndices = [];
+         data.forEach((row, i) => {
+            if (String(row[0]).trim().endsWith("班")) sectionIndices.push(i);
+         });
+         sectionIndices.push(data.length);
+
+         for (let s = 0; s < sectionIndices.length - 1; s++) {
+            const start = sectionIndices[s];
+            const end = sectionIndices[s + 1];
+            const tableData = data.slice(start, end);
+            const groupName = String(tableData[0][0]).trim();
+
+            const navBtn = document.createElement("button");
+            navBtn.textContent = groupName;
+            navBtn.onclick = () => {
+               document.getElementById(`section-${s}`).scrollIntoView({ behavior: 'smooth' });
+            };
+            nav.appendChild(navBtn);
+
+            const wrapper = document.createElement("div");
+            wrapper.className = "class-table-wrapper";
+            wrapper.id = `section-${s}`;
+            wrapper.innerHTML = `<div class="section-title">${groupName}</div>`;
+
+            const tContainer = document.createElement("div");
+            tContainer.className = "table-container";
+            const table = document.createElement("table");
+            const headers = tableData[0];
+
+            let html = "<thead><tr><th>名前</th>";
+            for (let j = 1; j < headers.length; j++) html += `<th>${headers[j] || '-'}</th>`;
+            html += "</tr></thead><tbody>";
+
+            let freeText = "";
+            let freeRowIndex = 0;
+
+            for (let i = 1; i < tableData.length; i++) {
+               const row = tableData[i];
+               const actualRow = start + i + 1;
+               if (String(row[0]).trim() === "会場など") {
+                  freeText = row[1] || "";
+                  freeRowIndex = actualRow;
+                  continue;
+               }
+               html += `<tr><td><strong>${row[0] || ''}</strong></td>`;
+               for (let j = 1; j < headers.length; j++) {
+                  const val = row[j] || '';
+                  if (j === 1 || j === 2) {
+                     html += `<td class="readonly-cell">${val}</td>`;
+                  } else {
+                     html += `<td class="clickable-cell" data-row="${actualRow}" data-col="${j + 1}" onclick="openModal(this)">${val}</td>`;
+                  }
+               }
+               html += "</tr>";
+            }
+            table.innerHTML = html + "</tbody>";
+            tContainer.appendChild(table);
+            wrapper.appendChild(tContainer);
+
+            // Venue/Free Text
+            const freeCont = document.createElement("div");
+            freeCont.className = "free-input-container";
+            freeCont.innerHTML = `
+               <label>📍 会場など</label>
+               <textarea data-row="${freeRowIndex}" data-col="2" placeholder="入力してください...">${freeText}</textarea>
+            `;
+            const tx = freeCont.querySelector("textarea");
+            tx.onchange = (e) => saveSpecific(freeRowIndex, 2, e.target.value);
+            wrapper.appendChild(freeCont);
+
+            // Actions
+            const statusBox = document.createElement("div");
+            statusBox.className = "status-box";
+            wrapper.appendChild(statusBox);
+
+            const lineBtn = document.createElement("button");
+            lineBtn.className = "btn-line";
+            lineBtn.innerHTML = `<span>ワンタップでLINE報告</span>`;
+            lineBtn.onclick = () => handleLineSend(wrapper, groupName, statusBox);
+            wrapper.appendChild(lineBtn);
+
+            container.appendChild(wrapper);
+         }
+      }
+
+      // --- Logic ---
+      function openModal(cell) {
+         currentTargetCell = cell;
+         const title = cell.parentElement.querySelector("td strong").textContent;
+         document.getElementById("modal-title").textContent = `${title} を編集`;
+         document.getElementById("modal-input").value = (cell.textContent.trim() === "0" || cell.textContent.trim() === "-") ? "" : cell.textContent.trim();
+         document.getElementById("edit-modal").style.display = "flex";
+         document.getElementById("modal-input").focus();
+      }
+
+      function closeModal() {
+         document.getElementById("edit-modal").style.display = "none";
+      }
+
+      async function confirmModal() {
+         const val = document.getElementById("modal-input").value || "0";
+         const row = currentTargetCell.dataset.row;
+         const col = currentTargetCell.dataset.col;
+         
+         // Optimistic UI
+         const oldContent = currentTargetCell.textContent;
+         currentTargetCell.textContent = val;
+         currentTargetCell.classList.add("optimistic-updating");
+         closeModal();
+
+         const result = await saveSpecific(row, col, val);
+         currentTargetCell.classList.remove("optimistic-updating");
+         
+         if (result.success) {
+            currentTargetCell.classList.add("confirmed-flash");
+            setTimeout(() => currentTargetCell.classList.remove("confirmed-flash"), 1000);
+            if (result.newReadonlyValues) {
+                const tr = currentTargetCell.parentElement;
+                tr.children[1].textContent = result.newReadonlyValues[0];
+                tr.children[2].textContent = result.newReadonlyValues[1];
+            }
+         } else {
+            currentTargetCell.textContent = oldContent;
+            alert("保存に失敗しました。");
+         }
+      }
+
+      async function saveSpecific(row, col, val) {
+         return await sendUpdate(row, col, val);
+      }
+
+      async function handleLineSend(wrapper, groupName, statusBox) {
+         try {
+            const data = gatherData(wrapper);
+            const text = formatText(data, groupName);
+
+            if (liff.isInClient()) {
+               await liff.sendMessages([{ type: 'text', text: text }]);
+               showStatus(statusBox, "報告を送信しました！", true);
+               liff.closeWindow();
+            } else {
+               // 外部ブラウザの場合はシェアターゲットピッカーまたはコピー
+               await liff.shareTargetPicker([{ type: 'text', text: text }]);
+               showStatus(statusBox, "送信完了", true);
+            }
+         } catch (err) {
+            console.error(err);
+            showStatus(statusBox, "送信エラー: " + err.message, false);
+         }
+      }
+
+      function showStatus(box, msg, isSuccess) {
+         box.textContent = msg;
+         box.className = "status-box show " + (isSuccess ? "status-success" : "status-error");
+         setTimeout(() => { box.classList.remove("show"); }, 3000);
+      }
+
+      function gatherData(wrapper) {
+         const rows = [];
+         const table = wrapper.querySelector("table");
+         const headers = Array.from(table.querySelectorAll("th")).map(th => th.textContent);
+         const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
+
+         bodyRows.forEach(tr => {
+            const cells = Array.from(tr.querySelectorAll("td")).map(td => td.textContent.trim());
+            rows.push(cells);
+         });
+
+         const freeText = wrapper.querySelector("textarea").value.trim();
+         return { headers, rows, freeText };
+      }
+
+      function formatText(data, groupName) {
+         let msg = `【${groupName}】報告\n\n`;
+         
+         // 表形式に整形（簡易）
+         data.rows.forEach(row => {
+            const values = row.slice(1).filter(v => v !== "0" && v !== "-" && v !== "");
+            if (values.length > 0) {
+               msg += `${row[0]}: ${row.slice(1).join(" / ")}\n`;
+            }
+         });
+
+         if (data.freeText) {
+            msg += `\n会場等: ${data.freeText}`;
+         }
+         return msg;
+      }
+   </script>
+</body>
+
+</html>
