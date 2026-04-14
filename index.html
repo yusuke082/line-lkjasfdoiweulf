@@ -230,6 +230,29 @@
          box-shadow: 0 2px 6px rgba(6, 199, 85, 0.2);
       }
 
+      .btn-share {
+         width: 100%;
+         background-color: #00b0ff;
+         color: white;
+         border: none;
+         padding: 14px;
+         font-size: 14px;
+         font-weight: bold;
+         border-radius: 10px;
+         cursor: pointer;
+         display: flex;
+         align-items: center;
+         justify-content: center;
+         gap: 8px;
+         transition: all 0.2s;
+         box-shadow: 0 4px 12px rgba(0, 176, 255, 0.2);
+         margin-top: 4px;
+      }
+
+      .btn-share:active {
+         transform: scale(0.98);
+      }
+
       /* Status */
       .status-box {
          padding: 12px;
@@ -503,9 +526,15 @@
 
             const lineBtn = document.createElement("button");
             lineBtn.className = "btn-line";
-            lineBtn.innerHTML = `<span>ワンタップでLINE報告</span>`;
+            lineBtn.innerHTML = `<span>ワンタップ報告 (${groupName})</span>`;
             lineBtn.onclick = () => handleLineSend(wrapper, groupName, statusBox);
             wrapper.appendChild(lineBtn);
+
+            const shareBtn = document.createElement("button");
+            shareBtn.className = "btn-share";
+            shareBtn.innerHTML = `<span>送信先を選んで共有</span>`;
+            shareBtn.onclick = () => handleLineShare(wrapper, groupName, statusBox);
+            wrapper.appendChild(shareBtn);
 
             container.appendChild(wrapper);
          }
@@ -574,6 +603,24 @@
          } catch (err) {
             console.error(err);
             showStatus(statusBox, "送信エラー: " + err.message, false);
+         }
+      }
+
+      async function handleLineShare(wrapper, groupName, statusBox) {
+         try {
+            const data = gatherData(wrapper);
+            const text = formatText(data, groupName);
+
+            // 送信先選択画面を開く
+            const res = await liff.shareTargetPicker([{ type: 'text', text: text }]);
+            if (res) {
+               showStatus(statusBox, "共有しました！", true);
+            } else {
+               showStatus(statusBox, "キャンセルされました", false);
+            }
+         } catch (err) {
+            console.error(err);
+            showStatus(statusBox, "共有エラー: " + err.message, false);
          }
       }
 
