@@ -589,16 +589,23 @@
       async function handleLineSend(wrapper, groupName, statusBox) {
          try {
             const data = gatherData(wrapper);
-            const text = formatText(data, groupName);
+            const flexMsg = generateFlexMessage(data, groupName);
+            const textMsg = formatText(data, groupName);
 
             if (liff.isInClient()) {
-               await liff.sendMessages([{ type: 'text', text: text }]);
+               // Flex Message と テキスト を配列で同時に送る
+               await liff.sendMessages([
+                  { type: 'flex', altText: `${groupName}の花びら報告`, contents: flexMsg },
+                  { type: 'text', text: textMsg }
+               ]);
                showStatus(statusBox, "報告を送信しました！", true);
                liff.closeWindow();
             } else {
-               // 外部ブラウザの場合はシェアターゲットピッカーまたはコピー
-               await liff.shareTargetPicker([{ type: 'text', text: text }]);
-               showStatus(statusBox, "送信完了", true);
+               const res = await liff.shareTargetPicker([
+                  { type: 'flex', altText: `${groupName}の花びら報告`, contents: flexMsg },
+                  { type: 'text', text: textMsg }
+               ]);
+               if (res) showStatus(statusBox, "送信完了", true);
             }
          } catch (err) {
             console.error(err);
@@ -609,10 +616,13 @@
       async function handleLineShare(wrapper, groupName, statusBox) {
          try {
             const data = gatherData(wrapper);
-            const text = formatText(data, groupName);
+            const flexMsg = generateFlexMessage(data, groupName);
+            const textMsg = formatText(data, groupName);
 
-            // 送信先選択画面を開く
-            const res = await liff.shareTargetPicker([{ type: 'text', text: text }]);
+            const res = await liff.shareTargetPicker([
+               { type: 'flex', altText: `${groupName}の花びら報告`, contents: flexMsg },
+               { type: 'text', text: textMsg }
+            ]);
             if (res) {
                showStatus(statusBox, "共有しました！", true);
             } else {
@@ -622,6 +632,136 @@
             console.error(err);
             showStatus(statusBox, "共有エラー: " + err.message, false);
          }
+      }
+
+      // --- Flex Message 生成 ---
+      function generateFlexMessage(data, groupName) {
+         const rows = data.rows;
+         const headers = data.headers;
+
+         // ヘッダー（見出し行）の作成
+         const headerContents = headers.map((h, i) => ({
+            type: "text",
+            text: h || "-",
+            size: "xs",
+            color: "#333333",
+            weight: "bold",
+            flex: i === 0 ? 3 : 2,
+            align: i === 0 ? "start" : "center"
+         }));
+
+         // データ行の作成
+         const rowContents = rows.map(row => {
+            const cells = row.map((cell, i) => ({
+               type: "text",
+               text: String(cell || "0"),
+               size: "xs",
+               color: "#666666",
+               flex: i === 0 ? 3 : 2,
+               align: i === 0 ? "start" : "center"
+            }));
+
+            return {
+               type: "box",
+               layout: "horizontal",
+               contents: cells,
+               margin: "sm"
+            };
+         });
+
+         const bubble = {
+            type: "bubble",
+            header: {
+               type: "box",
+               layout: "horizontal",
+               contents: [
+                  {
+                     type: "text",
+                     text: "🌸",
+                     size: "lg",
+                     flex: 0
+                  },
+                  {
+                     type: "text",
+                     text: `${groupName} 花びら報告`,
+                     weight: "bold",
+                     size: "md",
+                     margin: "sm",
+                     color: "#2c3e50"
+                  }
+               ]
+            },
+            body: {
+               type: "box",
+               layout: "vertical",
+               contents: [
+                  {
+                     type: "box",
+                     layout: "horizontal",
+                     contents: headerContents,
+                     backgroundColor: "#e0f2e9",
+                     paddingAll: "4px",
+                     cornerRadius: "4px"
+                  },
+                  {
+                     type: "separator",
+                     margin: "sm"
+                  },
+                  {
+                     type: "box",
+                     layout: "vertical",
+                     contents: rowContents,
+                     margin: "sm"
+                  }
+               ],
+               paddingAll: "12px"
+            }
+         };
+
+         // 会場情報がある場合のみフッターに追加
+         if (data.freeText) {
+            bubble.footer = {
+               type: "box",
+               layout: "vertical",
+               contents: [
+                  {
+                     type: "separator",
+                     margin: "none"
+                  },
+                  {
+                     type: "box",
+                     layout: "horizontal",
+                     margin: "md",
+                     contents: [
+                        {
+                           type: "text",
+                           text: "📍",
+                           size: "sm",
+                           flex: 0
+                        },
+                        {
+                           type: "text",
+                           text: "会場など",
+                           size: "sm",
+                           weight: "bold",
+                           margin: "xs",
+                           color: "#2c3e50"
+                        }
+                     ]
+                  },
+                  {
+                     type: "text",
+                     text: data.freeText,
+                     size: "sm",
+                     wrap: true,
+                     color: "#666666",
+                     margin: "xs"
+                  }
+               ]
+            };
+         }
+
+         return bubble;
       }
 
       function showStatus(box, msg, isSuccess) {
