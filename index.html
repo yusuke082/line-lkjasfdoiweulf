@@ -888,7 +888,11 @@
       function formatText(data, groupName) {
          let msg = `【${groupName}】報告\n\n`;
          
-         // 表形式に整形（簡易）
+         // ヘッダー（項目見出し）の追加
+         msg += data.headers.join(" / ") + "\n";
+         msg += "--------------------\n";
+
+         // 各行のデータ（実績がある行のみ）
          data.rows.forEach(row => {
             const values = row.slice(1).filter(v => v !== "0" && v !== "-" && v !== "");
             if (values.length > 0) {
