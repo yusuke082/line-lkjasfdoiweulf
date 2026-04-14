@@ -889,7 +889,8 @@
          let msg = `【${groupName}】報告\n\n`;
          
          // ヘッダー（項目見出し）の追加
-         msg += data.headers.join(" / ") + "\n";
+         const headerRow = data.headers.map(h => h.trim() || "-").join(" / ");
+         msg += headerRow + "\n";
          msg += "--------------------\n";
 
          // 各行のデータ（実績がある行のみ）
