@@ -456,6 +456,48 @@
             transform: rotate(360deg);
          }
       }
+
+      /* 会場入力必須アラート用 */
+      .venue-required label {
+         color: #e11d48 !important;
+      }
+
+      .venue-required label::after {
+         content: "（※実績があるため記入してください）";
+         font-size: 11px;
+         color: #e11d48;
+         margin-left: 8px;
+         font-weight: bold;
+         animation: pulseText 0.8s infinite alternate;
+      }
+
+      .venue-required textarea {
+         border-color: #fca5a5 !important;
+         background-color: #fff1f2 !important;
+         box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.1) !important;
+      }
+
+      @keyframes pulseText {
+         from { opacity: 0.5; }
+         to { opacity: 1; }
+      }
+
+      /* 入力漏れ警告（日数など） */
+      .highlight-warning {
+         background-color: #fff7ed !important; /* 薄いオレンジ */
+         color: #c2410c !important; /* 濃いオレンジ */
+         font-weight: bold;
+         box-shadow: inset 0 0 0 2px #fdba74;
+         position: relative;
+      }
+
+      .highlight-warning::after {
+         content: "!";
+         position: absolute;
+         top: 2px;
+         right: 4px;
+         font-size: 10px;
+      }
    </style>
 </head>
 
@@ -674,7 +716,10 @@
                <textarea data-row="${freeRowIndex}" data-col="2" placeholder="入力してください...">${freeText}</textarea>
             `;
             const tx = freeCont.querySelector("textarea");
-            tx.onchange = (e) => saveSpecific(freeRowIndex, 2, e.target.value);
+            tx.onchange = (e) => {
+               saveSpecific(freeRowIndex, 2, e.target.value);
+               checkVenueRequirement(wrapper);
+            };
             wrapper.appendChild(freeCont);
 
             // Actions
@@ -695,6 +740,9 @@
             wrapper.appendChild(shareBtn);
 
             container.appendChild(wrapper);
+
+            // 初回チェック
+            checkVenueRequirement(wrapper);
          }
       }
 
@@ -729,6 +777,10 @@
          if (result.success) {
             currentTargetCell.classList.add("confirmed-flash");
             setTimeout(() => currentTargetCell.classList.remove("confirmed-flash"), 1000);
+
+            const wrapper = currentTargetCell.closest('.class-table-wrapper');
+            if (wrapper) checkVenueRequirement(wrapper);
+
             if (result.newReadonlyValues) {
                const tr = currentTargetCell.parentElement;
                tr.children[1].textContent = result.newReadonlyValues[0];
@@ -962,6 +1014,43 @@
             msg += `\n会場等: ${data.freeText}`;
          }
          return msg;
+      }
+
+      function checkVenueRequirement(wrapper) {
+         const tbodyRows = wrapper.querySelectorAll('tbody tr');
+         let hasAnyPositiveValue = false;
+
+         tbodyRows.forEach(tr => {
+            const cells = tr.querySelectorAll('td');
+            if (cells.length < 2) return;
+
+            // 右から2列目（実績）と一番右（日数）を取得
+            const qtyCell = cells[cells.length - 2];
+            const daysCell = cells[cells.length - 1];
+            
+            const qty = parseInt(qtyCell.textContent) || 0;
+            const days = parseInt(daysCell.textContent) || 0;
+
+            if (qty > 0) hasAnyPositiveValue = true;
+
+            // 実績があるのに日数が0の場合は警告
+            if (qty > 0 && days === 0) {
+               daysCell.classList.add('highlight-warning');
+            } else {
+               daysCell.classList.remove('highlight-warning');
+            }
+         });
+
+         const freeInputContainer = wrapper.querySelector('.free-input-container');
+         const textarea = freeInputContainer.querySelector('textarea');
+
+         if (freeInputContainer && textarea) {
+            if (hasAnyPositiveValue && textarea.value.trim() === "") {
+               freeInputContainer.classList.add('venue-required');
+            } else {
+               freeInputContainer.classList.remove('venue-required');
+            }
+         }
       }
    </script>
 </body>
