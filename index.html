@@ -347,6 +347,18 @@
          margin-bottom: 10px;
       }
 
+      /* ローダー */
+      #loader {
+         position: fixed;
+         top: 0; left: 0; width: 100%; height: 100%;
+         background: rgba(255,255,255,0.9);
+         display: flex;
+         flex-direction: column;
+         justify-content: center;
+         align-items: center;
+         z-index: 3000;
+      }
+
       /* ロック画面（認証用） */
       #lock-screen {
          position: fixed;
@@ -483,10 +495,13 @@
       }
 
       async function submitPasscode() {
+         const btn = event.currentTarget;
          const pass = document.getElementById('passcode-input').value;
          if (!pass) return;
 
          try {
+            btn.disabled = true;
+            btn.textContent = "認証中...";
             document.getElementById('loader').style.display = 'flex';
             const resp = await fetch(GAS_URL, {
                method: 'POST',
@@ -500,9 +515,13 @@
                await fetchData(); // 再取得してロック解除
             } else {
                alert(result.message);
+               btn.disabled = false;
+               btn.textContent = "認証する";
             }
          } catch (err) {
             alert("通信エラーが発生しました。");
+            btn.disabled = false;
+            btn.textContent = "認証する";
          } finally {
             document.getElementById('loader').style.display = 'none';
          }
