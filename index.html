@@ -478,14 +478,21 @@
       }
 
       @keyframes pulseText {
-         from { opacity: 0.5; }
-         to { opacity: 1; }
+         from {
+            opacity: 0.5;
+         }
+
+         to {
+            opacity: 1;
+         }
       }
 
       /* 入力漏れ警告（日数など） */
       .highlight-warning {
-         background-color: #fff7ed !important; /* 薄いオレンジ */
-         color: #c2410c !important; /* 濃いオレンジ */
+         background-color: #fff7ed !important;
+         /* 薄いオレンジ */
+         color: #c2410c !important;
+         /* 濃いオレンジ */
          font-weight: bold;
          box-shadow: inset 0 0 0 2px #fdba74;
          position: relative;
@@ -508,7 +515,6 @@
    </div>
 
    <div id="sticky-header-container">
-      <h1>実績データ入力連携</h1>
       <div id="nav-container"></div>
    </div>
 
@@ -729,13 +735,13 @@
 
             const lineBtn = document.createElement("button");
             lineBtn.className = "btn-line";
-            lineBtn.innerHTML = `<span>ワンタップ報告 (${groupName})</span>`;
+            lineBtn.innerHTML = `<span>お試し報告 (${groupName})</span>`;
             lineBtn.onclick = () => handleLineSend(wrapper, groupName, statusBox);
             wrapper.appendChild(lineBtn);
 
             const shareBtn = document.createElement("button");
             shareBtn.className = "btn-share";
-            shareBtn.innerHTML = `<span>送信先を選んで共有</span>`;
+            shareBtn.innerHTML = `<span>送信先を選んで報告(${groupName})</span>`;
             shareBtn.onclick = () => handleLineShare(wrapper, groupName, statusBox);
             wrapper.appendChild(shareBtn);
 
@@ -996,7 +1002,7 @@
       }
 
       function formatText(data, groupName) {
-         let msg = `【${groupName}】報告\n\n`;
+         let msg = `【${groupName}】チラシまき報告\n\n`;
 
          // ヘッダー（項目見出し）の追加
          const headerRow = data.headers.map(h => h.trim() || "-").join(" / ");
@@ -1027,7 +1033,7 @@
             // 右から2列目（実績）と一番右（日数）を取得
             const qtyCell = cells[cells.length - 2];
             const daysCell = cells[cells.length - 1];
-            
+
             const qty = parseInt(qtyCell.textContent) || 0;
             const days = parseInt(daysCell.textContent) || 0;
 
