@@ -583,6 +583,12 @@
          try {
             await liff.init({ liffId: LIFF_ID });
 
+            // 未ログイン時（外部ブラウザ等）はログイン画面へリダイレクト
+            if (!liff.isLoggedIn()) {
+               liff.login();
+               return; // リダイレクトされるため以降の処理は不要
+            }
+
             // プロフィール（ID）取得
             const profile = await liff.getProfile();
             userId = profile.userId;
