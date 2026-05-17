@@ -1067,14 +1067,14 @@
          let msg = `【${groupName}】チラシまき報告\n\n`;
 
          // ヘッダー（項目見出し）の追加
-         const headerRow = data.headers.map(h => h.trim() || "-").join(" / ");
+         const headerRow = data.headers.map(h => h.trim() || "-").join("/");
          msg += headerRow + "\n";
 
          // 各行のデータ（実績がある行のみ）
          data.rows.forEach(row => {
             const values = row.slice(1).filter(v => v !== "0" && v !== "-" && v !== "");
             if (values.length > 0) {
-               msg += `${row[0]}: ${row.slice(1).join(" / ")}\n`;
+               msg += `${row[0]}:${row.slice(1).join("/")}\n`;
             }
          });
 
