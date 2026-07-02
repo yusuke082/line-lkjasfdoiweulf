@@ -811,10 +811,14 @@
          currentTargetCell.textContent = newVal;
          currentTargetCell.classList.add("optimistic-updating");
 
-         // 同じ行の readonly-cell (集計セル) を即座に更新
+         // 編集したセルが「日数」セル（一番右端のセル）であるか判定
          const tr = currentTargetCell.parentElement;
+         const cells = Array.from(tr.querySelectorAll('td'));
+         const isDaysCell = (cells.indexOf(currentTargetCell) === cells.length - 1);
+
+         // 同じ行の readonly-cell (集計セル) を即座に更新
          const readonlyCells = tr.querySelectorAll('.readonly-cell');
-         if (readonlyCells.length >= 2 && diff !== 0) {
+         if (!isDaysCell && readonlyCells.length >= 2 && diff !== 0) {
             readonlyCells.forEach(cell => {
                const currentSum = parseInt(cell.textContent) || 0;
                cell.textContent = currentSum + diff;
@@ -828,26 +832,32 @@
 
          // 更新中スタイルを解除
          currentTargetCell.classList.remove("optimistic-updating");
-         readonlyCells.forEach(cell => cell.classList.remove("optimistic-updating"));
+         if (!isDaysCell) {
+            readonlyCells.forEach(cell => cell.classList.remove("optimistic-updating"));
+         }
 
          if (result.success) {
             // 成功フラッシュ
             currentTargetCell.classList.add("confirmed-flash");
-            readonlyCells.forEach(cell => {
-               cell.classList.remove("confirmed-flash");
-               void cell.offsetWidth; // アニメーションのリセット
-               cell.classList.add("confirmed-flash");
-            });
+            if (!isDaysCell) {
+               readonlyCells.forEach(cell => {
+                  cell.classList.remove("confirmed-flash");
+                  void cell.offsetWidth; // アニメーションのリセット
+                  cell.classList.add("confirmed-flash");
+               });
+            }
             setTimeout(() => {
                currentTargetCell.classList.remove("confirmed-flash");
-               readonlyCells.forEach(cell => cell.classList.remove("confirmed-flash"));
+               if (!isDaysCell) {
+                  readonlyCells.forEach(cell => cell.classList.remove("confirmed-flash"));
+               }
             }, 1000);
 
             const wrapper = currentTargetCell.closest('.class-table-wrapper');
             if (wrapper) checkVenueRequirement(wrapper);
 
             // 最終的な値をサーバーから取得した値で同期（同期ミス防止）
-            if (result.newReadonlyValues) {
+            if (!isDaysCell && result.newReadonlyValues) {
                readonlyCells[0].textContent = result.newReadonlyValues[0];
                readonlyCells[1].textContent = result.newReadonlyValues[1];
             }
